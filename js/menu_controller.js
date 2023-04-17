@@ -3,7 +3,7 @@ function start_game(){
 	
 	sessionStorage.setItem("username", name);
 	
-	loadpage("./html/game.html");
+	loadpage("./resources/logo.html");
 }
 
 function exit (){
