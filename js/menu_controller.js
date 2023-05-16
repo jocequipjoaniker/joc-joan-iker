@@ -3,7 +3,7 @@ function start_game(){
 	
 	sessionStorage.setItem("username", name);
 	
-	loadpage("./resources/logo.html");
+	loadpage("./html/game.html");
 }
 
 function exit (){
@@ -16,6 +16,14 @@ function exit (){
 
 function options(){
 	loadpage("./html/options.html");
+}
+
+function ranking(){
+	loadpage("./html/ranking.html");
+}
+
+function load_game() {
+	loadpage("./html/saves.html");
 }
 
 

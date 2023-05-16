@@ -1,21 +1,22 @@
 <!DOCTYPE html> 
 <html>
 	<head>
-		<link rel="stylesheet" href="./styles/main.css">
+		<link rel="stylesheet" href="../styles/main.css">
+		<script src="//cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.js"></script>
 		<script src="./js/loader.js"></script>
 		<script src="./js/game_info.js"></script>
 		<script src="./js/menu_controller.js"></script>
 		<title> My first game - Menu </title>
 	</head>
 	<body>
-		<p class="menu-object" id="title">Memory menu</p>
+		<p class="other-text" id="title">Tower 	Defense Game</p>
 		<button class="menu-object" onclick="start_game()"> 
 			Start Game 
 		</button>
-		<button class="menu-object" onclick="start_game()"> 
+		<button class="menu-object" onclick="load_game()"> 
 			Load Game
 		</button>
-		<button class="menu-object" onclick="start_game()"> 
+		<button class="menu-object" onclick="ranking()"> 
 			Ranking 
 		</button>
 		<button class="menu-object" onclick="options()"> 
