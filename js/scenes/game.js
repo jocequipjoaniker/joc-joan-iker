@@ -15,12 +15,28 @@ class Enemy extends Phaser.GameObjects.PathFollower {
         this.health = 3;
     }
 
+    update(time, delta) {
+        super.update(time, delta);
+        
+        let tolerance = 0.01;
+        let point = this.path.getPoint(1 - tolerance);
+        if (this.isFollowing() && Phaser.Math.Distance.Between(this.x, this.y, point.x, point.y) < tolerance) {
+          // enemy has reached the end of the path
+          this.scene.loseLife();
+          this.destroy();
+        }
+      }
+      
+      
+      
+
     // Funció per a reduir la salud del enemic
     takeDamage() {
-        console.log(this.health)
         this.health -= 1;
         if (this.health <= 0) {
             // Si la salud del enemic es menor o igual a cero, destruir-ho
+            this.scene.gold += 100;
+            this.scene.goldText.setText(`Gold: ${this.scene.gold}`);
             this.destroy();
         }
     }
@@ -97,10 +113,10 @@ class Turret extends Phaser.GameObjects.Image {
 
 class Bullet extends Phaser.GameObjects.Image {
     constructor(scene) {
-    super(scene, 0, 0, 'bullet');
-    
-    // set the bullet's speed
-    this.speed = Phaser.Math.GetSpeed(600, 1);
+        super(scene, 0, 0, 'bullet');
+        
+        // set the bullet's speed
+        this.speed = Phaser.Math.GetSpeed(600, 1);
     }
     
     // call this function to fire the bullet towards the target
@@ -153,6 +169,10 @@ class GameScene extends Phaser.Scene {
 
         this.graphics;
         this.path;
+        this.gold;
+        this.goldText;
+        this.lives;
+        this.livesText;
     }
 
     preload(){
@@ -161,6 +181,14 @@ class GameScene extends Phaser.Scene {
     }
 
     create(){
+        this.lives = 3;
+        this.livesText = this.add.text(16, 64, `Lives: ${this.lives}`, { fontSize: '32px', fill: '#fff' });
+
+
+        this.gold = 300;
+        // create the gold text object
+        this.goldText = this.add.text(16, 16, `Gold: ${this.gold}`, { fontSize: '32px', fill: '#fff' });
+
         this.input.on('pointerdown', this.placeTurret, this);
 
         this.graphics = this.add.graphics();    
@@ -213,7 +241,9 @@ class GameScene extends Phaser.Scene {
         });
 
         // initialize the enemies group
-        this.enemies = this.add.group();
+        this.enemies = this.add.group({
+            runChildUpdate: true
+        });
 
 
 
@@ -240,39 +270,48 @@ class GameScene extends Phaser.Scene {
     }
 
     placeTurret(pointer) {
-        // get the grid coordinates
-        let i = Math.floor(pointer.y / 64);
-        let j = Math.floor(pointer.x / 64);
-        
-        // get the center of the grid cell
-        let cellCenterX = j * 64 + 32;
-        let cellCenterY = i * 64 + 32;
-        
-        // get the points along the path
-        let points = this.path.getPoints();
-        
-        // check if any of the points are within a certain distance of the cell center
-        for (let p = 0; p < points.length; p++) {
-        let dx = points[p].x - cellCenterX;
-        let dy = points[p].y - cellCenterY;
-        let distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < 32) {
-        // don't place a turret on the path
-        return;
+        if(this.gold>=200){
+            // get the grid coordinates
+            let i = Math.floor(pointer.y / 64);
+            let j = Math.floor(pointer.x / 64);
+            
+            // get the center of the grid cell
+            let cellCenterX = j * 64 + 32;
+            let cellCenterY = i * 64 + 32;
+            
+            // get the points along the path
+            let points = this.path.getPoints();
+            
+            // check if any of the points are within a certain distance of the cell center
+            for (let p = 0; p < points.length; p++) {
+                let dx = points[p].x - cellCenterX;
+                let dy = points[p].y - cellCenterY;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < 32) {
+                    // don't place a turret on the path
+                    return;
+                }
+            }
+            
+            // check if the cell is empty
+            if (this.grid[i][j] === 0) {
+                // create a new turret
+                let turret = new Turret(this, j * 64 + 32, i * 64 + 32);
+            
+                // add the turret to the group
+                this.turrets.add(turret);
+            
+                // mark the cell as occupied
+                this.grid[i][j] = 1;
+
+                this.gold -= 200;
+
+                // actualitzar el text de gold
+                this.goldText.setText(`Gold: ${this.gold}`);
+            }
+
         }
-        }
         
-        // check if the cell is empty
-        if (this.grid[i][j] === 0) {
-        // create a new turret
-        let turret = new Turret(this, j * 64 + 32, i * 64 + 32);
-        
-        // add the turret to the group
-        this.turrets.add(turret);
-        
-        // mark the cell as occupied
-        this.grid[i][j] = 1;
-        }
     }
        
     findNearestEnemy() {
@@ -292,6 +331,11 @@ class GameScene extends Phaser.Scene {
         }
         
         return nearestEnemy;
+    }
+
+    loseLife(){
+        this.lives -= 1;
+        this.livesText.setText(`Lives: ${this.lives}`);
     }
        
     
