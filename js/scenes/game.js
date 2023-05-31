@@ -5,12 +5,37 @@ class Enemy extends Phaser.GameObjects.PathFollower {
         // Configurar la velocidad del enemigo
         this.startFollow({
             positionOnPath: true,
-            duration: 10000,
+            duration: 15000,
             yoyo: false,
             repeat: -1,
             rotateToPath: true,
             verticalAdjust: true
         });
+        // Agregar la propietat health al enemic
+        this.health = 3;
+    }
+
+    // Funció per a reduir la salud del enemic
+    takeDamage() {
+        console.log(this.health)
+        this.health -= 1;
+        if (this.health <= 0) {
+            // Si la salud del enemic es menor o igual a cero, destruir-ho
+            this.destroy();
+        }
+    }
+
+    // Métode par a detectar si l'enemic ha sigut colpejat per una bala
+    hit(bullet) {
+        // check if the bullet has reached its target
+        if (Phaser.Math.Distance.Between(this.x, this.y, bullet.x, bullet.y) < 10) {
+            // reduce the enemy's health
+            this.takeDamage();
+            
+            // disable the bullet
+            bullet.setActive(false);
+            bullet.setVisible(false);
+        }
     }
 }
 
@@ -32,14 +57,14 @@ class Turret extends Phaser.GameObjects.Image {
         
         // loop through all active enemies
         for (let i = 0; i < this.scene.enemies.getChildren().length; i++) {
-        let enemy = this.scene.enemies.getChildren()[i];
-        if (enemy.active) {
-        let distance = Phaser.Math.Distance.Between(this.x, this.y, enemy.x, enemy.y);
-        if (distance < nearestDistance && distance < 200) {
-        nearestEnemy = enemy;
-        nearestDistance = distance;
-        }
-        }
+            let enemy = this.scene.enemies.getChildren()[i];
+            if (enemy.active) {
+                let distance = Phaser.Math.Distance.Between(this.x, this.y, enemy.x, enemy.y);
+                if (distance < nearestDistance && distance < 200) {
+                    nearestEnemy = enemy;
+                    nearestDistance = distance;
+                }
+            }
         }
         
         return nearestEnemy;
@@ -80,13 +105,15 @@ class Bullet extends Phaser.GameObjects.Image {
     
     // call this function to fire the bullet towards the target
     fire(x, y, targetX, targetY) {
-        console.log("fire")
         // set the bullet's position
         this.setPosition(x, y);
         
         // set the bullet's target
         this.targetX = targetX;
         this.targetY = targetY;
+
+        // set the bullet's lifetime
+        this.lifetime = 1000;
         
         // enable the bullet
         this.setActive(true);
@@ -97,15 +124,26 @@ class Bullet extends Phaser.GameObjects.Image {
         // move the bullet towards its target
         this.x += this.speed * delta * (this.targetX - this.x) / Phaser.Math.Distance.Between(this.x, this.y, this.targetX, this.targetY);
         this.y += this.speed * delta * (this.targetY - this.y) / Phaser.Math.Distance.Between(this.x, this.y, this.targetX, this.targetY);
+
+        // reduce the bullet's lifetime
+        this.lifetime -= delta;
         
-        // check if the bullet has reached its target
-        if (Phaser.Math.Distance.Between(this.x, this.y, this.targetX, this.targetY) < 4) {
+        if (this.lifetime <= 0) {
             // disable the bullet
             this.setActive(false);
             this.setVisible(false);
         }
+
+        // loop through all active enemies
+        for (let i = 0; i < this.scene.enemies.getChildren().length; i++) {
+            let enemy = this.scene.enemies.getChildren()[i];
+            if (enemy.active) {
+                // call the enemy's hit method
+                enemy.hit(this);
+            }
         }
-   }
+    }
+}
    
 
 
