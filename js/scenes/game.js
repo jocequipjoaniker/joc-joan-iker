@@ -1,3 +1,25 @@
+class PauseMenu extends Phaser.Scene {
+    constructor() {
+        super({ key: 'PauseMenu' });
+    }
+
+    // In the PauseMenu scene
+    create() {
+        // Create a button or other interactive object
+        let resumeButton = this.add.text(300, 300, 'RESUME', {fontSize:50, fill: '#0f0' })
+        .setInteractive()
+        .on('pointerdown', () => this.resumeGame());
+    }
+    
+    resumeGame() {
+        // Resume the GameScene
+        this.scene.resume('GameScene');
+        // Stop the PauseMenu scene
+        this.scene.stop('PauseMenu');
+    }
+  
+}
+
 class Enemy extends Phaser.GameObjects.PathFollower {
     constructor(scene, path) {
         // Crear un enemigo y agregarlo al grupo de enemigos
@@ -19,13 +41,15 @@ class Enemy extends Phaser.GameObjects.PathFollower {
         super.update(time, delta);
         
         let tolerance = 0.01;
-        let point = this.path.getPoint(1 - tolerance);
+        let point = this.path.getPoint(1);
         if (this.isFollowing() && Phaser.Math.Distance.Between(this.x, this.y, point.x, point.y) < tolerance) {
-          // enemy has reached the end of the path
-          this.scene.loseLife();
-          this.destroy();
+            // enemy has reached the end of the path
+            this.scene.loseLife();
+            this.destroy();
         }
-      }
+    }
+    
+    
       
       
       
@@ -253,6 +277,9 @@ class GameScene extends Phaser.Scene {
             this.add.existing(enemy);
            }, 2000);
            
+        // Create a new Key object for the 'P' key
+        this.pauseKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
+
         
     }
 
@@ -264,6 +291,13 @@ class GameScene extends Phaser.Scene {
                 // call the turret's fire method
                 turret.fire();
             }
+        }
+
+        // Check if the 'P' key was just pressed
+        if (Phaser.Input.Keyboard.JustDown(this.pauseKey)) {
+            // Pause the game and launch the PauseMenu scene
+            this.scene.pause('GameScene');
+            this.scene.launch('PauseMenu');
         }
            
 
@@ -333,12 +367,29 @@ class GameScene extends Phaser.Scene {
         return nearestEnemy;
     }
 
-    loseLife(){
+    loseLife() {
         this.lives -= 1;
         this.livesText.setText(`Lives: ${this.lives}`);
+        
+        if (this.lives === 0) {
+            // end the game
+            this.gameOver();
+        }
     }
-       
     
+    gameOver() {
+        window.location.href = 'gameOver.html';
+    }
+
+    sceneLoad() {
+        if (!this.scene.isActive('PauseMenu')) {
+            this.scene.pause('GameScene');
+            this.scene.launch('PauseMenu');
+        } else {
+            this.scene.setVisible(true, 'PauseMenu');
+        }
+        
+    }
     
     
 }

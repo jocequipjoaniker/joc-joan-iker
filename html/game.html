@@ -7,24 +7,19 @@
     <script src="//cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
     <script src="../js/loader.js"></script>
-    <script src="../js/save.js"></script>
-    <script src="../js/options.js"></script>
     <script src="../js/scenes/game.js"></script>
     <script src="../js/game_controller.js"></script>
-    <script src="../js/loader.js"></script>
 
 
     <title>Mi juego con Phaser</title>
 </head>
 <body>
     <div id="game_area"></div>
-    <button class="menu-object" onclick="save_game()"> 
-        Save and exit
+    <button class="menu-object" onclick="exit_game()">
+        Exit
     </button>
     <script>
-        function save_game() {
-            let gameScene = game.scene.getScene('GameScene');
-            gameScene.saveGame();
+        function exit_game() {
             loadpage("../index.html");
         }
     </script>

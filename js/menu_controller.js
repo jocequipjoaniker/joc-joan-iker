@@ -14,16 +14,4 @@ function exit (){
 	loadpage("../index.html");
 }
 
-function options(){
-	loadpage("./html/options.html");
-}
-
-function ranking(){
-	loadpage("./html/ranking.html");
-}
-
-function load_game() {
-	loadpage("./html/saves.html");
-}
-
 
