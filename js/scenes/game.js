@@ -5,10 +5,22 @@ class PauseMenu extends Phaser.Scene {
 
     // In the PauseMenu scene
     create() {
+        // Create a new Key object for the 'P' key
+        this.pauseKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
+
         // Create a button or other interactive object
         let resumeButton = this.add.text(300, 300, 'RESUME', {fontSize:50, fill: '#0f0' })
         .setInteractive()
         .on('pointerdown', () => this.resumeGame());
+    }
+
+    update(){
+        // Check if the 'P' key was just pressed
+        if (Phaser.Input.Keyboard.JustDown(this.pauseKey)) {
+            this.resumeGame();
+        }
+           
+
     }
     
     resumeGame() {

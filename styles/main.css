@@ -87,18 +87,41 @@
 	  text-align:center;
 	  font-size: 50px;
   }
-  
-  #ranking-list {
-	list-style: none;
-	padding: 0;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
+
+p {
+	color: white;
+	font-size: 30px;
   }
   
-  #ranking-list li {
-	  color:#fff;
-	  font-size: 24px;
+
+  #canon.shoot {
+	animation: shoot 2s infinite;
+  }
+  
+  @keyframes shoot {
+	50% {
+	  transform: translateX(-100px);
+	}
+  }
+  
+  #bullet.exit {
+	animation: exit 2s infinite;
+  }
+  
+  @keyframes exit {
+	25% {
+	  transform: translateX(50px);
+	}
+	50% {
+	  transform: translateX(100px);
+	}
+  }
+  
+
+svg {
+	display: block;
+	margin: auto;
+	scale: 0.5;
   }
   
 
