@@ -18,8 +18,8 @@ class GameScene extends Phaser.Scene {
 
     preload(){
         // carrega les imatges i sprites
-        this.load.atlas('sprites', '../../resources/spritesheet.png', '../../resources/spritesheet.json');
-        this.load.image('bullet', '../../resources/bullet.png');
+        this.load.atlas('sprites', '../resources/spritesheet.png', '../resources/spritesheet.json');
+        this.load.image('bullet', '../resources/bullet.png');
     }
 
     create(){
