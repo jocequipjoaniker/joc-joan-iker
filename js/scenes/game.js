@@ -1,208 +1,13 @@
-class PauseMenu extends Phaser.Scene {
-    constructor() {
-        super({ key: 'PauseMenu' });
-    }
-
-    // In the PauseMenu scene
-    create() {
-        // Create a new Key object for the 'P' key
-        this.pauseKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
-
-        // Create a button or other interactive object
-        let resumeButton = this.add.text(300, 300, 'RESUME', {fontSize:50, fill: '#0f0' })
-        .setInteractive()
-        .on('pointerdown', () => this.resumeGame());
-    }
-
-    update(){
-        // Check if the 'P' key was just pressed
-        if (Phaser.Input.Keyboard.JustDown(this.pauseKey)) {
-            this.resumeGame();
-        }
-           
-
-    }
-    
-    resumeGame() {
-        // Resume the GameScene
-        this.scene.resume('GameScene');
-        // Stop the PauseMenu scene
-        this.scene.stop('PauseMenu');
-    }
-  
-}
-
-class Enemy extends Phaser.GameObjects.PathFollower {
-    constructor(scene, path) {
-        // Crear un enemigo y agregarlo al grupo de enemigos
-        super(scene, path, 0, 0, 'sprites', 'enemy');
-        // Configurar la velocidad del enemigo
-        this.startFollow({
-            positionOnPath: true,
-            duration: 15000,
-            yoyo: false,
-            repeat: -1,
-            rotateToPath: true,
-            verticalAdjust: true
-        });
-        // Agregar la propietat health al enemic
-        this.health = 3;
-    }
-
-    update(time, delta) {
-        super.update(time, delta);
-        
-        let tolerance = 0.01;
-        let point = this.path.getPoint(1);
-        if (this.isFollowing() && Phaser.Math.Distance.Between(this.x, this.y, point.x, point.y) < tolerance) {
-            // enemy has reached the end of the path
-            this.scene.loseLife();
-            this.destroy();
-        }
-    }
-    
-    
-      
-      
-      
-
-    // Funció per a reduir la salud del enemic
-    takeDamage() {
-        this.health -= 1;
-        if (this.health <= 0) {
-            // Si la salud del enemic es menor o igual a cero, destruir-ho
-            this.scene.gold += 100;
-            this.scene.goldText.setText(`Gold: ${this.scene.gold}`);
-            this.destroy();
-        }
-    }
-
-    // Métode par a detectar si l'enemic ha sigut colpejat per una bala
-    hit(bullet) {
-        // check if the bullet has reached its target
-        if (Phaser.Math.Distance.Between(this.x, this.y, bullet.x, bullet.y) < 10) {
-            // reduce the enemy's health
-            this.takeDamage();
-            
-            // disable the bullet
-            bullet.setActive(false);
-            bullet.setVisible(false);
-        }
-    }
-}
-
-class Turret extends Phaser.GameObjects.Image {
-    constructor(scene, x, y) {
-        super(scene, x, y, 'sprites', 'turret');
-        
-        // add the turret to the scene
-        scene.add.existing(this);
-        
-        // set the turret's firing rate
-        this.fireRate = 1000;
-        this.nextFire = 0;
-    }
-
-    findNearestEnemy() {
-        let nearestEnemy = null;
-        let nearestDistance = Infinity;
-        
-        // loop through all active enemies
-        for (let i = 0; i < this.scene.enemies.getChildren().length; i++) {
-            let enemy = this.scene.enemies.getChildren()[i];
-            if (enemy.active) {
-                let distance = Phaser.Math.Distance.Between(this.x, this.y, enemy.x, enemy.y);
-                if (distance < nearestDistance && distance < 200) {
-                    nearestEnemy = enemy;
-                    nearestDistance = distance;
-                }
-            }
-        }
-        
-        return nearestEnemy;
-       }
-       
-    
-    fire() {
-        // get the current time
-        let time = this.scene.time.now;
-        
-        // check if the turret can fire
-        if (time > this.nextFire) {
-            // find the nearest enemy
-            let enemy = this.findNearestEnemy();
-            
-            if (enemy) {
-                // create a bullet
-                let bullet = this.scene.bullets.get();
-                if (bullet) {
-                    bullet.fire(this.x, this.y, enemy.x, enemy.y);
-                }
-                
-                // set the time for the next shot
-                this.nextFire = time + this.fireRate;
-            }
-        }
-    }
-       
-}
-
-class Bullet extends Phaser.GameObjects.Image {
-    constructor(scene) {
-        super(scene, 0, 0, 'bullet');
-        
-        // set the bullet's speed
-        this.speed = Phaser.Math.GetSpeed(600, 1);
-    }
-    
-    // call this function to fire the bullet towards the target
-    fire(x, y, targetX, targetY) {
-        // set the bullet's position
-        this.setPosition(x, y);
-        
-        // set the bullet's target
-        this.targetX = targetX;
-        this.targetY = targetY;
-
-        // set the bullet's lifetime
-        this.lifetime = 1000;
-        
-        // enable the bullet
-        this.setActive(true);
-        this.setVisible(true);
-    }
-    
-    update(time, delta) {
-        // move the bullet towards its target
-        this.x += this.speed * delta * (this.targetX - this.x) / Phaser.Math.Distance.Between(this.x, this.y, this.targetX, this.targetY);
-        this.y += this.speed * delta * (this.targetY - this.y) / Phaser.Math.Distance.Between(this.x, this.y, this.targetX, this.targetY);
-
-        // reduce the bullet's lifetime
-        this.lifetime -= delta;
-        
-        if (this.lifetime <= 0) {
-            // disable the bullet
-            this.setActive(false);
-            this.setVisible(false);
-        }
-
-        // loop through all active enemies
-        for (let i = 0; i < this.scene.enemies.getChildren().length; i++) {
-            let enemy = this.scene.enemies.getChildren()[i];
-            if (enemy.active) {
-                // call the enemy's hit method
-                enemy.hit(this);
-            }
-        }
-    }
-}
-   
-
+import Enemy from "../enemy.js";
+import Turret from "../turret.js";
+import Bullet from "../bullet.js";
 
 class GameScene extends Phaser.Scene {
     constructor(){
         super('GameScene');
 
+        this.level;
+        this.enemiesDefeated;
         this.graphics;
         this.path;
         this.gold;
@@ -212,196 +17,223 @@ class GameScene extends Phaser.Scene {
     }
 
     preload(){
+        // carrega les imatges i sprites
         this.load.atlas('sprites', '/resources/spritesheet.png', '/resources/spritesheet.json');
         this.load.image('bullet', '/resources/bullet.png');
     }
 
     create(){
+        // inicialitza les variables de nivell i enemics derrotats
+        this.level = 1;
+        this.enemiesDefeated = 0;
+
+        // inicialitza la salut i la velocitat dels enemics
+        this.enemyHealth = 0;
+        this.enemySpeed = 0;
+
+        // crea un objecte de text per mostrar el nivell actual
+        this.levelText = this.add.text(450, 16, `Nivell: ${this.level}`, { fontSize: '32px', fill: '#fff' });
+
+        // inicialitza les vides i el text de les vides
         this.lives = 3;
-        this.livesText = this.add.text(16, 64, `Lives: ${this.lives}`, { fontSize: '32px', fill: '#fff' });
+        this.livesText = this.add.text(120, 16, `Vides: ${this.lives}`, { fontSize: '32px', fill: '#fff' });
 
 
+        // inicialitza l'or i el text de l'or
         this.gold = 300;
-        // create the gold text object
-        this.goldText = this.add.text(16, 16, `Gold: ${this.gold}`, { fontSize: '32px', fill: '#fff' });
+        // crea l'objecte de text d'or
+        this.goldText = this.add.text(290, 16, `Or: ${this.gold}`, { fontSize: '32px', fill: '#fff' });
 
+        // afegeix un esdeveniment per col·locar una torreta quan es fa clic amb el ratolí
         this.input.on('pointerdown', this.placeTurret, this);
 
-        this.graphics = this.add.graphics();    
-    
-        // the path for our enemies
-        // parameters are the start x and y of our path
+        // crea un objecte gràfic per dibuixar el camí dels enemics
+        this.graphics = this.add.graphics();
+
+        // el camí per als nostres enemics
+        // els paràmetres són l'inici x i y del nostre camí
         this.path = this.add.path(96, -32);
         this.path.lineTo(96, 164);
         this.path.lineTo(480, 164);
         this.path.lineTo(480, 544);
-        
+
+        // dibuixa el camí amb una línia blanca
         this.graphics.lineStyle(3, 0xffffff, 1);
-        // visualize the path
+        // visualitza el camí
         this.path.draw(this.graphics);
 
         let graphics = this.add.graphics();
         graphics.lineStyle(1, 0xffffff, 0.8);
-        
-        // draw vertical lines
+
+        // dibuixa línies verticals
         for(let i = 0; i < this.game.config.width; i += 64){
             graphics.moveTo(i, 0);
             graphics.lineTo(i, this.game.config.height);
         }
-        
-        // draw horizontal lines
+
+        // dibuixa línies horitzontals
         for(let i = 0; i < this.game.config.height; i += 64){
             graphics.moveTo(0, i);
             graphics.lineTo(this.game.config.width, i);
         }
-        
+
         graphics.strokePath();
 
-        // initialize the grid
+        // inicialitza la graella
         this.grid = [];
         for (let i = 0; i < this.game.config.height / 64; i++) {
             this.grid[i] = [];
             for (let j = 0; j < this.game.config.width / 64; j++) {
+                // marca totes les cel·les com a buides
                 this.grid[i][j] = 0;
             }
         }
-        
-        // initialize the turrets group
+
+        // inicialitza el grup de torretes
         this.turrets = this.add.group();
 
-        // create a pool of bullets
-        this.bullets = this.add.group({
+        // crea un grup de bales amb una mida màxima de 30
+        // executa l'actualització dels fills per actualitzar les bales cada fotograma
+        this.bullets =this.add.group({
             classType: Bullet,
-            maxSize: 30,
-            runChildUpdate: true
+            maxSize:30,
+            runChildUpdate:true
         });
 
-        // initialize the enemies group
-        this.enemies = this.add.group({
-            runChildUpdate: true
+        // inicialitza el grup d'enemics amb l'actualització dels fills activada per actualitzar els enemics cada fotograma
+        this.enemies=this.add.group({
+            runChildUpdate:true
         });
 
 
 
+        // estableix un interval per generar enemics cada dos segons
         setInterval(() => {
-            let enemy = new Enemy(this, this.path);
-            this.enemies.add(enemy);
-            this.add.existing(enemy);
-           }, 2000);
-           
-        // Create a new Key object for the 'P' key
-        this.pauseKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
+            this.spawnEnemy();
+        },2000);
 
-        
+        // Crea un nou objecte Key per a la tecla 'P'
+        this.pauseKey=this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
     }
 
     update(){
-        // loop through all active turrets
-        for (let i = 0; i < this.turrets.getChildren().length; i++) {
-            let turret = this.turrets.getChildren()[i];
-            if (turret.active) {
-                // call the turret's fire method
+        // recorre totes les torretes actives
+        for(let i=0;i<this.turrets.getChildren().length;i++){
+            let turret=this.turrets.getChildren()[i];
+            if(turret.active){
+                // crida al mètode fire de la torreta
                 turret.fire();
             }
         }
 
-        // Check if the 'P' key was just pressed
-        if (Phaser.Input.Keyboard.JustDown(this.pauseKey)) {
-            // Pause the game and launch the PauseMenu scene
+        // Comprova si s'ha premut la tecla 'P'
+        if(Phaser.Input.Keyboard.JustDown(this.pauseKey)){
+            // Pausa el joc i llança l'escena PauseMenu
             this.scene.pause('GameScene');
             this.scene.launch('PauseMenu');
         }
-           
 
+        // comprova si el jugador ha derrotat prou enemics per avançar al següent nivell
+        if(this.enemiesDefeated>=10){
+            this.level++;
+            this.enemiesDefeated=0;
+            this.levelText.setText(`Nivell: ${this.level}`);
+            // augmenta la dificultat aquí
+            this.enemySpeed+=1000;
+            this.enemyHealth+=1;
+        }
     }
 
-    placeTurret(pointer) {
+    spawnEnemy(){
+        // crea un nou enemic amb el camí especificat com a paràmetre
+        let enemy=new Enemy(this,this.path);
+        // estableix la velocitat i la salut de l'enemic en funció del nivell actual
+        enemy.speed=this.enemySpeed;
+        enemy.health=this.enemyHealth;
+        // afegeix l'enemic al grup d'enemics i a l'escena
+        this.enemies.add(enemy);
+        this.add.existing(enemy);
+        }
+
+    placeTurret(pointer){
         if(this.gold>=200){
-            // get the grid coordinates
-            let i = Math.floor(pointer.y / 64);
-            let j = Math.floor(pointer.x / 64);
-            
-            // get the center of the grid cell
-            let cellCenterX = j * 64 + 32;
-            let cellCenterY = i * 64 + 32;
-            
-            // get the points along the path
-            let points = this.path.getPoints();
-            
-            // check if any of the points are within a certain distance of the cell center
-            for (let p = 0; p < points.length; p++) {
-                let dx = points[p].x - cellCenterX;
-                let dy = points[p].y - cellCenterY;
-                let distance = Math.sqrt(dx * dx + dy * dy);
-                if (distance < 32) {
-                    // don't place a turret on the path
+            // obté les coordenades de la graella on es fa clic amb el ratolí
+            let i=Math.floor(pointer.y/64);
+            let j=Math.floor(pointer.x/64);
+
+            // obté el centre de la cel·la de la graella on es fa clic amb el ratolí
+            let cellCenterX=j*64+32;
+            let cellCenterY=i*64+32;
+
+            // obté els punts del camí dels enemics
+            let points=this.path.getPoints();
+
+            // comprova si algun dels punts està a una certa distància del centre de la cel·la on es fa clic amb el ratolí
+            for(let p=0;p<points.length;p++){
+                let dx=points[p].x-cellCenterX;
+                let dy=points[p].y-cellCenterY;
+                let distance=Math.sqrt(dx*dx+dy*dy);
+                if(distance<32){
+                    // no col·loquis una torreta al camí dels enemics
                     return;
                 }
             }
-            
-            // check if the cell is empty
-            if (this.grid[i][j] === 0) {
-                // create a new turret
-                let turret = new Turret(this, j * 64 + 32, i * 64 + 32);
-            
-                // add the turret to the group
+
+            // comprova si la cel·la està buida (no hi ha cap torreta)
+            if(this.grid[i][j]===0){
+                // crea una nova torreta al centre de la cel·la on es fa clic amb el ratolí
+                let turret=new Turret(this,j*64+32,i*64+32);
+
+                // afegeix la torreta al grup de torretes
                 this.turrets.add(turret);
-            
-                // mark the cell as occupied
-                this.grid[i][j] = 1;
 
-                this.gold -= 200;
+                // marca la cel·la com a ocupada (hi ha una torreta)
+                this.grid[i][j]=1;
 
-                // actualitzar el text de gold
-                this.goldText.setText(`Gold: ${this.gold}`);
+                // resta l'or necessari per col·locar una torreta (200)
+                this.gold-=200;
+
+                // actualitza el text d'or per mostrar l'or restant després de col·locar una torreta.
+                this.goldText.setText(`Or: ${this.gold}`);
             }
 
-        }
-        
-    }
-       
-    findNearestEnemy() {
-        let nearestEnemy = null;
-        let nearestDistance = Infinity;
-        
-        // loop through all active enemies
-        for (let i = 0; i < this.scene.enemies.getChildren().length; i++) {
-            let enemy = this.scene.enemies.getChildren()[i];
-            if (enemy.active) {
-                let distance = Phaser.Math.Distance.Between(this.x, this.y, enemy.x, enemy.y);
-                if (distance < nearestDistance && distance < 200) {
-                    nearestEnemy = enemy;
-                    nearestDistance = distance;
-                }
-            }
-        }
-        
-        return nearestEnemy;
     }
 
-    loseLife() {
-        this.lives -= 1;
-        this.livesText.setText(`Lives: ${this.lives}`);
-        
-        if (this.lives === 0) {
-            // end the game
+    }
+
+    loseLife(){
+        // resta una vida al jugador quan un enemic arriba al final del camí.
+        this.lives-=1;
+        this.livesText.setText(`Vides: ${this.lives}`);
+
+        if(this.lives===0){
+            // finalitza el joc si no queden vides.
             this.gameOver();
         }
     }
-    
-    gameOver() {
-        window.location.href = 'gameOver.html';
+
+    gameOver(){
+        window.location.href='gameOver.html';
     }
 
-    sceneLoad() {
-        if (!this.scene.isActive('PauseMenu')) {
+    sceneLoad(){
+        if(!this.scene.isActive('PauseMenu')){
             this.scene.pause('GameScene');
             this.scene.launch('PauseMenu');
-        } else {
-            this.scene.setVisible(true, 'PauseMenu');
+        }else{
+            this.scene.setVisible(true,'PauseMenu');
         }
-        
+
     }
-    
-    
+
+    enemyDefeated(){
+        // augmenta el comptador d'enemics derrotats quan un enemic és derrotat.
+        this.enemiesDefeated++;
+        // augmenta l'or del jugador quan un enemic és derrotat.
+        this.gold+=10;
+        // actualitza el text d'or per mostrar l'or guanyat després de derrotar un enemic
+        this.goldText.setText(`Or: ${this.gold}`);
+    }
 }
+
+export default GameScene
